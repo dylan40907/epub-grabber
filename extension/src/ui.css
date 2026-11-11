@@ -1,0 +1,32 @@
+/* The confirm box (ui.js). Uses the page's colour tokens. */
+
+.eg-modal-back {
+  position: fixed; inset: 0; z-index: 2147483000;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(2px);
+  animation: eg-fade .12s ease-out both;
+}
+.eg-modal-back.closing { animation: eg-fade .12s ease-in reverse both; }
+.eg-modal {
+  width: min(380px, 100%); background: var(--bg); color: var(--ink);
+  border: 1px solid var(--ink); border-top-width: 3px; padding: 18px 18px 16px;
+  box-shadow: 8px 8px 0 color-mix(in srgb, var(--ink) 18%, transparent);
+  animation: eg-drop .18s cubic-bezier(.2, .8, .2, 1) both;
+}
+.eg-modal.danger { border-color: var(--hot); }
+.eg-modal.wide { width: min(500px, 100%); }
+.eg-modal-title { font-weight: 800; font-size: 15px; letter-spacing: -.01em; margin-bottom: 6px; }
+.eg-modal-msg { color: var(--dim); font-size: 13px; line-height: 1.5; margin-bottom: 18px; overflow-wrap: anywhere; white-space: pre-line; }
+.eg-modal-btns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.eg-modal-btns button {
+  font: inherit; font-weight: 700; font-size: 13px; padding: 8px 16px; cursor: pointer;
+  border: 1px solid var(--line-strong); background: transparent; color: var(--ink);
+}
+.eg-modal-btns button:hover { border-color: var(--ink); }
+.eg-modal-btns button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.eg-modal-ok { background: var(--primary) !important; color: var(--on-primary) !important; border-color: var(--primary) !important; }
+.eg-modal.danger .eg-modal-ok { background: var(--hot) !important; border-color: var(--hot) !important; color: #fff !important; }
+.eg-modal.danger .eg-modal-btns button:focus-visible { outline-color: var(--hot); }
+@keyframes eg-fade { from { opacity: 0; } }
+@keyframes eg-drop { from { opacity: 0; transform: translateY(-8px); } }

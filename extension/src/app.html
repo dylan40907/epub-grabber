@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EPUB Grabber</title>
+  <link rel="icon" href="../icons/icon32.png">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body>
+
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path d="M3 5.5C5.5 4 8.5 4 11.2 5.6V19c-2.7-1.5-5.7-1.5-8.2 0z M12.8 5.6C15.5 4 18.5 4 21 5.5V19c-2.5-1.5-5.5-1.5-8.2 0z" fill="currentColor"/>
+      </svg>
+      <span>EPUB Grabber</span>
+    </div>
+    <div class="top-right">
+      <span id="clock" class="mono dim">00:00</span>
+      <span id="status" class="status idle"><i></i><b>Idle</b></span>
+    </div>
+  </header>
+
+  <main>
+    <div id="stale" class="stale" hidden>
+      <span>EPUB Grabber was updated, but the browser is still running the old version in the background.</span>
+      <button id="reloadExt" class="btn">Reload EPUB Grabber</button>
+    </div>
+
+    <!-- the book ----------------------------------------------------------- -->
+    <section class="book">
+      <div class="head">
+        <h2>Book</h2>
+        <span id="chapCount" class="dim small">0 chapters</span>
+      </div>
+      <div class="book-bar">
+        <label class="field">
+          <select id="bookSel" aria-label="Book"></select>
+        </label>
+        <button id="newBook" class="btn">+ New book</button>
+        <button id="delBook" class="btn danger">Delete book</button>
+        <span class="spacer"></span>
+        <button id="build" class="btn primary" disabled>⬇ Build &amp; download EPUB</button>
+      </div>
+      <div class="book-fields">
+        <label class="field"><span class="eyebrow">Title</span><input id="bookTitle" type="text" placeholder="My Book"></label>
+        <label class="field"><span class="eyebrow">Author</span><input id="bookAuthor" type="text" placeholder="Unknown Author"></label>
+        <label class="field"><span class="eyebrow">Chapter titles</span>
+          <select id="titleMode">
+            <option value="firstLine">First line of each chapter (taken out of the text)</option>
+            <option value="numbered">Chapter 1, 2, 3… (text left as is)</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- capture bar ------------------------------------------------------- -->
+    <section class="capture">
+      <label class="field grow">
+        <span class="eyebrow">Starting chapter link</span>
+        <input id="startUrl" type="url" placeholder="Paste the link to the chapter to start from" spellcheck="false" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="eyebrow">Site config</span>
+        <select id="configSel" aria-label="Site config"></select>
+      </label>
+      <button id="editCfgs" class="btn tall">Edit site configs</button>
+      <button id="go" class="go">Start capturing</button>
+    </section>
+    <div class="runline">
+      <span class="dot" id="dot"></span>
+      <span id="runText">idle</span>
+    </div>
+
+    <!-- chapters / in flight / latest -------------------------------------- -->
+    <section class="split">
+      <div class="col">
+        <div class="head">
+          <h2>Chapters</h2>
+          <span class="list-tools">
+            <span class="dim small" id="listNote">rename, drag to reorder, read or remove</span>
+            <button id="undoBtn" class="icon" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M5.5 3 2 6.5 5.5 10M2.5 6.5h7a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square"/></svg>
+            </button>
+            <button id="trashBtn" class="icon trash" title="Remove all chapters" aria-label="Remove chapters">
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 4h11M6 4V2h4v2M4 4l.7 10h6.6L12 4M6.6 6.5v5M9.4 6.5v5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/></svg>
+            </button>
+          </span>
+        </div>
+        <ol id="chapters" class="chapters"></ol>
+        <div id="emptyMsg" class="empty">No chapters yet. Paste a chapter link above and press Start.</div>
+      </div>
+
+      <div class="col">
+        <div class="head"><h2>Progress</h2><span class="dim small" id="flightNote"></span></div>
+        <ol id="lanes" class="lanes"></ol>
+        <div class="stats">
+          <div class="stat"><span class="eyebrow">Added this run</span><b class="mono" id="bigCount">0</b><small><span id="sWords">0</span> words</small></div>
+          <div class="stat"><span class="eyebrow">In the book</span><b class="mono" id="sTotal">0</b><small id="sTotalSub">0 words</small></div>
+          <div class="stat"><span class="eyebrow">Pace</span><b class="mono" id="sPace">-</b><small>chapters / min</small></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="head"><h2>Latest chapter</h2><span class="dim small mono" id="latestNum"></span></div>
+        <div id="pages" class="pages">
+          <div class="page-empty dim">Chapters show up here as they're read.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- site configs ----------------------------------------------------------- -->
+  <div id="cfgDialog" class="reader" hidden>
+    <div class="reader-page cfg-page" role="dialog" aria-modal="true" aria-labelledby="cfgHead">
+      <header>
+        <span class="eyebrow" id="cfgHead">Site configs</span>
+        <button id="cfgClose" class="btn small">Close</button>
+      </header>
+      <label class="field cfg-pick">
+        <span class="eyebrow">Config</span>
+        <select id="cfgEditSel" aria-label="Config to edit"></select>
+      </label>
+      <div class="config-row">
+        <input id="configName" type="text" maxlength="60" aria-label="Config name" hidden>
+        <div class="config-name" id="configTitle">Config 1</div>
+        <div class="row-btns">
+          <button id="renameCfg" class="btn small">Rename</button>
+          <button id="addCfg" class="btn small">+ Add config</button>
+          <button id="delCfg" class="btn small danger">Delete</button>
+        </div>
+      </div>
+
+      <div class="pick" data-slot="next">
+        <button class="btn pick-btn" data-pick="next">Select next chapter button</button>
+        <div class="pick-info">
+          <div class="pick-what" id="nextWhat">not picked yet</div>
+          <div class="pick-actions">
+            <button class="link" data-show="next">show</button>
+            <button class="link" data-clear="next">clear</button>
+          </div>
+        </div>
+      </div>
+      <div class="pick" data-slot="text">
+        <button class="btn pick-btn" data-pick="text">Select chapter text area</button>
+        <div class="pick-info">
+          <div class="pick-what" id="textWhat">not picked yet</div>
+          <div class="pick-actions">
+            <button class="link" data-show="text">show</button>
+            <button class="link" data-clear="text">clear</button>
+          </div>
+        </div>
+      </div>
+      <p class="dim small pick-note">Selecting opens the starting chapter link in a tab to pick on.</p>
+      <div id="pickHint" class="hint" hidden></div>
+
+      <div class="phrases">
+        <div class="head"><span class="eyebrow">Stop text</span><span class="dim small">every site</span></div>
+        <p class="dim small phrase-note">A page that shows any of these instead of a chapter (a rate limit or browser check) stops the run.</p>
+        <ol id="phraseList" class="phrase-list"></ol>
+        <form id="phraseAdd" class="phrase-add">
+          <input id="phraseNew" type="text" maxlength="200" placeholder="Add text to look for" aria-label="Add stop text">
+          <button class="btn small" type="submit">+ Add</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- chapter reader --------------------------------------------------------- -->
+  <div id="reader" class="reader" hidden>
+    <article class="reader-page">
+      <header>
+        <span class="eyebrow" id="readerNum"></span>
+        <button id="readerClose" class="btn small">Close</button>
+      </header>
+      <h3 id="readerTitle"></h3>
+      <div id="readerText" class="reader-text"></div>
+    </article>
+  </div>
+
+  <script src="shared.js"></script>
+  <script src="capture.js"></script>
+  <script src="epub.js"></script>
+  <script src="bookio.js"></script>
+  <script src="ui.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

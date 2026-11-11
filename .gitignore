@@ -1,0 +1,10 @@
+# Test and build output
+.shots/
+.test-output.epub
+*.epub
+*.zip
+node_modules/
+
+# Editor folders
+.vscode/
+.idea/
